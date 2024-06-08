@@ -2,6 +2,8 @@ package merkletree
 
 import (
 	"testing"
+
+	"github.com/safwentrabelsi/merkletree-implementation/utils"
 )
 
 func TestMerkleTree(t *testing.T) {
@@ -12,7 +14,7 @@ func TestMerkleTree(t *testing.T) {
 		[]byte("data4"),
 	}
 
-	tree := NewMerkleTree(data)
+	tree := NewMerkleTree(data, utils.SHA256Hash)
 	rootHash := tree.Root.Hash
 
 	proof, err := tree.GenerateMerkleProof([]byte("data1"))
@@ -20,7 +22,7 @@ func TestMerkleTree(t *testing.T) {
 		t.Fatalf("Failed to generate proof: %v", err)
 	}
 
-	isValid := VerifyMerkleProof(rootHash, []byte("data1"), proof)
+	isValid := VerifyMerkleProof(rootHash, []byte("data1"), proof, utils.SHA256Hash)
 	if !isValid {
 		t.Fatalf("Proof verification failed for data1")
 	}
@@ -30,7 +32,7 @@ func TestMerkleTree(t *testing.T) {
 		t.Fatalf("Failed to generate proof: %v", err)
 	}
 
-	isValid2 := VerifyMerkleProof(rootHash, []byte("data2"), proof2)
+	isValid2 := VerifyMerkleProof(rootHash, []byte("data2"), proof2, utils.SHA256Hash)
 	if !isValid2 {
 		t.Fatalf("Proof verification failed for data2")
 	}

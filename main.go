@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/safwentrabelsi/merkletree-implementation/merkletree"
+	"github.com/safwentrabelsi/merkletree-implementation/utils"
 )
 
 func main() {
@@ -14,7 +15,7 @@ func main() {
 		[]byte("data4"),
 	}
 
-	tree := merkletree.NewMerkleTree(data)
+	tree := merkletree.NewMerkleTree(data, utils.SHA256Hash)
 	fmt.Printf("Root hash: %x\n", tree.Root.Hash)
 
 	// left example
@@ -28,7 +29,7 @@ func main() {
 		}
 	}
 
-	isValid := merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data1"), proof)
+	isValid := merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data1"), proof, utils.SHA256Hash)
 	fmt.Printf("Proof valid: %v\n", isValid)
 
 	// right example
@@ -37,11 +38,11 @@ func main() {
 		fmt.Println(err)
 	} else {
 		fmt.Println("List of proofs:")
-		for _, node := range proof {
+		for _, node := range proof2 {
 			fmt.Printf("Hash: %x, Left: %v\n", node.Hash, node.Left)
 		}
 	}
 
-	isValid2 := merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data2"), proof2)
+	isValid2 := merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data2"), proof2, utils.SHA256Hash)
 	fmt.Printf("Proof valid for data2: %v\n", isValid2)
 }

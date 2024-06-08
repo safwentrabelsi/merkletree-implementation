@@ -2,10 +2,10 @@ package merkletree
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"fmt"
 )
 
+type HashFunction func(data []byte) []byte
 type Node struct {
 	Left   *Node
 	Right  *Node
@@ -16,8 +16,9 @@ type Node struct {
 }
 
 type MerkleTree struct {
-	Root   *Node
-	Leaves []*Node
+	Root     *Node
+	Leaves   []*Node
+	hashFunc HashFunction
 }
 
 type ProofNode struct {
@@ -25,23 +26,23 @@ type ProofNode struct {
 	Left bool
 }
 
-func NewMerkleTree(data [][]byte) *MerkleTree {
+func NewMerkleTree(data [][]byte, hashFunc HashFunction) *MerkleTree {
 
 	leaves := make([]*Node, len(data))
 	for i, d := range data {
-		hash := hash256(d)
+		hash := hashFunc(d)
 		leaves[i] = &Node{Hash: hash, Data: d, Index: i}
 	}
 
 	tree := &MerkleTree{
 		Leaves: leaves,
 	}
-	tree.Root = buildTree(leaves)
+	tree.Root = buildTree(leaves, hashFunc)
 	return tree
 
 }
 
-func buildTree(nodes []*Node) *Node {
+func buildTree(nodes []*Node, hashFunc HashFunction) *Node {
 
 	if len(nodes) == 1 {
 		return nodes[0]
@@ -57,14 +58,14 @@ func buildTree(nodes []*Node) *Node {
 			right = nodes[i+1]
 		}
 
-		parentHash := hash256(append(left.Hash, right.Hash...))
+		parentHash := hashFunc(append(left.Hash, right.Hash...))
 		parentNode := &Node{Hash: parentHash, Left: left, Right: right}
 		left.Parent = parentNode
 		right.Parent = parentNode
 		ParentNodes = append(ParentNodes, parentNode)
 	}
 
-	return buildTree(ParentNodes)
+	return buildTree(ParentNodes, hashFunc)
 
 }
 
@@ -107,23 +108,18 @@ func (n *Node) getSibling() (*Node, bool) {
 	return n.Parent.Left, true
 }
 
-func VerifyMerkleProof(rootHash []byte, data []byte, proof []ProofNode) bool {
+func VerifyMerkleProof(rootHash []byte, data []byte, proof []ProofNode, hashFunc HashFunction) bool {
 
-	currentHash := hash256(data)
+	currentHash := hashFunc(data)
 
 	for _, p := range proof {
 		if p.Left {
-			currentHash = hash256(append(p.Hash, currentHash...))
+			currentHash = hashFunc(append(p.Hash, currentHash...))
 
 		} else {
-			currentHash = hash256(append(currentHash, p.Hash...))
+			currentHash = hashFunc(append(currentHash, p.Hash...))
 
 		}
 	}
 	return bytes.Equal(currentHash, rootHash)
-}
-
-func hash256(d []byte) []byte {
-	hash := sha256.Sum256(d)
-	return hash[:]
 }
