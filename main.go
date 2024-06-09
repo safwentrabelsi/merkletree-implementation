@@ -23,7 +23,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println("List of proofs:")
+		fmt.Println("List of proofs for data1:")
 		for _, node := range proof {
 			fmt.Printf("Hash: %x, Left: %v\n", node.Hash, node.Left)
 		}
@@ -33,95 +33,96 @@ func main() {
 	fmt.Printf("Proof valid: %v\n", isValid)
 
 	// right example
-	proof2, err := tree.GenerateMerkleProof([]byte("data2"))
+	proof, err = tree.GenerateMerkleProof([]byte("data2"))
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println("List of proofs:")
-		for _, node := range proof2 {
+		fmt.Println("List of proofs for data2:")
+		for _, node := range proof {
 			fmt.Printf("Hash: %x, Left: %v\n", node.Hash, node.Left)
 		}
 	}
 
-	isValid2 := merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data2"), proof2, utils.SHA256Hash)
-	fmt.Printf("Proof valid for data2: %v\n", isValid2)
+	isValid = merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data2"), proof, utils.SHA256Hash)
+	fmt.Printf("Proof valid for data2: %v\n", isValid)
 
+	// Insert new leaves
 	tree.InsertLeaf([]byte("data5"))
 	tree.InsertLeaf([]byte("data6"))
 
-	proof3, err := tree.GenerateMerkleProof([]byte("data6"))
+	proof, err = tree.GenerateMerkleProof([]byte("data6"))
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println("List of proofs:")
-		for _, node := range proof3 {
+		fmt.Println("List of proofs for data6:")
+		for _, node := range proof {
 			fmt.Printf("Hash: %x, Left: %v\n", node.Hash, node.Left)
 		}
 	}
 	fmt.Printf("Root: %x\n", tree.Root.Hash)
-	isValid3 := merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data6"), proof3, utils.SHA256Hash)
-	fmt.Printf("Proof valid for data6: %v\n", isValid3)
+	isValid = merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data6"), proof, utils.SHA256Hash)
+	fmt.Printf("Proof valid for data6: %v\n", isValid)
 
 	tree.InsertLeaf([]byte("data7"))
 
-	proof4, err := tree.GenerateMerkleProof([]byte("data7"))
+	proof, err = tree.GenerateMerkleProof([]byte("data7"))
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println("List of proofs:")
-		for _, node := range proof4 {
+		fmt.Println("List of proofs for data7:")
+		for _, node := range proof {
 			fmt.Printf("Hash: %x, Left: %v\n", node.Hash, node.Left)
 		}
 	}
 	fmt.Printf("Root: %x\n", tree.Root.Hash)
-	isValid4 := merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data7"), proof4, utils.SHA256Hash)
-	fmt.Printf("Proof valid for data7: %v\n", isValid4)
+	isValid = merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data7"), proof, utils.SHA256Hash)
+	fmt.Printf("Proof valid for data7: %v\n", isValid)
 
 	tree.InsertLeaf([]byte("data8"))
 
-	proof5, err := tree.GenerateMerkleProof([]byte("data8"))
+	proof, err = tree.GenerateMerkleProof([]byte("data8"))
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println("List of proofs:")
-		for _, node := range proof5 {
+		fmt.Println("List of proofs for data8:")
+		for _, node := range proof {
 			fmt.Printf("Hash: %x, Left: %v\n", node.Hash, node.Left)
 		}
 	}
 	fmt.Printf("Root: %x\n", tree.Root.Hash)
-	isValid5 := merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data8"), proof5, utils.SHA256Hash)
-	fmt.Printf("Proof valid for data8: %v\n", isValid5)
+	isValid = merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data8"), proof, utils.SHA256Hash)
+	fmt.Printf("Proof valid for data8: %v\n", isValid)
 
 	tree.InsertLeaf([]byte("data9"))
 
-	proof6, err := tree.GenerateMerkleProof([]byte("data9"))
+	proof, err = tree.GenerateMerkleProof([]byte("data9"))
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println("List of proofs:")
-		for _, node := range proof6 {
+		fmt.Println("List of proofs for data9:")
+		for _, node := range proof {
 			fmt.Printf("Hash: %x, Left: %v\n", node.Hash, node.Left)
 		}
 	}
 	fmt.Printf("Root: %x\n", tree.Root.Hash)
-	isValid6 := merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data9"), proof6, utils.SHA256Hash)
-	fmt.Printf("Proof valid for data9: %v\n", isValid6)
+	isValid = merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data9"), proof, utils.SHA256Hash)
+	fmt.Printf("Proof valid for data9: %v\n", isValid)
 
 	// Test update leaf
 	err = tree.UpdateLeaf([]byte("data5"), []byte("newData5"))
 	if err != nil {
+		fmt.Println(err)
 	}
-	proof5, err = tree.GenerateMerkleProof([]byte("newData5"))
+	proof, err = tree.GenerateMerkleProof([]byte("newData5"))
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println("List of proofs:")
-		for _, node := range proof6 {
+		fmt.Println("List of proofs for newData5:")
+		for _, node := range proof {
 			fmt.Printf("Hash: %x, Left: %v\n", node.Hash, node.Left)
 		}
 	}
 	fmt.Printf("Root: %x\n", tree.Root.Hash)
-	isValid5 = merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("data9"), proof5, utils.SHA256Hash)
-	fmt.Printf("Proof valid for newdata5: %v\n", isValid5)
-
+	isValid = merkletree.VerifyMerkleProof(tree.Root.Hash, []byte("newData5"), proof, utils.SHA256Hash)
+	fmt.Printf("Proof valid for newData5: %v\n", isValid)
 }

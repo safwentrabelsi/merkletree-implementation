@@ -6,7 +6,10 @@ import (
 	"math"
 )
 
+// HashFunction defines a function type for hashing data
 type HashFunction func(data []byte) []byte
+
+// Node represents a node in the Merkle tree
 type Node struct {
 	Left   *Node
 	Right  *Node
@@ -16,19 +19,21 @@ type Node struct {
 	Index  int
 }
 
+// MerkleTree represents the Merkle tree structure
 type MerkleTree struct {
 	Root     *Node
 	Leaves   []*Node
 	hashFunc HashFunction
 }
 
+// ProofNode represents a node in the Merkle proof
 type ProofNode struct {
 	Hash []byte
 	Left bool
 }
 
+// NewMerkleTree creates a new Merkle tree from the provided data and hash function
 func NewMerkleTree(data [][]byte, hashFunc HashFunction) *MerkleTree {
-
 	leaves := make([]*Node, len(data))
 	for i, d := range data {
 		hash := hashFunc(d)
@@ -41,57 +46,23 @@ func NewMerkleTree(data [][]byte, hashFunc HashFunction) *MerkleTree {
 	}
 	tree.Root = buildTree(leaves, hashFunc)
 	return tree
-
 }
 
-func buildTree(nodes []*Node, hashFunc HashFunction) *Node {
-
-	if len(nodes) == 1 {
-		return nodes[0]
-	}
-
-	var ParentNodes []*Node
-
-	for i := 0; i < len(nodes); i += 2 {
-		left := nodes[i]
-		right := left
-
-		if i+1 < len(nodes) {
-			right = nodes[i+1]
-		}
-
-		parentHash := hashFunc(append(left.Hash, right.Hash...))
-		parentNode := &Node{Hash: parentHash, Left: left, Right: right}
-		left.Parent = parentNode
-		right.Parent = parentNode
-		ParentNodes = append(ParentNodes, parentNode)
-	}
-
-	return buildTree(ParentNodes, hashFunc)
-
-}
-
+// GenerateMerkleProof generates a Merkle proof for the given data
 func (m *MerkleTree) GenerateMerkleProof(data []byte) ([]ProofNode, error) {
-	var leaf *Node
-	for _, l := range m.Leaves {
-		if bytes.Equal(l.Data, data) {
-			leaf = l
-		}
-	}
+	leaf, err := m.findLeaf(data)
 
-	if leaf == nil {
+	if err != nil {
 		return nil, fmt.Errorf("data not found in tree")
 	}
 
 	var proof []ProofNode
 	current := leaf
 	for current.Parent != nil {
-
 		sibling, left := current.getSibling()
 
 		if sibling != nil {
 			proof = append(proof, ProofNode{Hash: sibling.Hash, Left: left})
-
 		}
 		current = current.Parent
 	}
@@ -110,27 +81,25 @@ func (n *Node) getSibling() (*Node, bool) {
 	return n.Parent.Left, true
 }
 
+// VerifyMerkleProof verifies the given Merkle proof against the root hash and data
 func VerifyMerkleProof(rootHash []byte, data []byte, proof []ProofNode, hashFunc HashFunction) bool {
-
 	currentHash := hashFunc(data)
 
 	for _, p := range proof {
 		if p.Left {
 			currentHash = hashFunc(append(p.Hash, currentHash...))
-
 		} else {
 			currentHash = hashFunc(append(currentHash, p.Hash...))
-
 		}
 	}
 	return bytes.Equal(currentHash, rootHash)
 }
 
+// InsertLeaf inserts a new leaf into the Merkle tree
 func (m *MerkleTree) InsertLeaf(data []byte) {
 	newLeaf := &Node{Data: data, Hash: m.hashFunc(data), Index: len(m.Leaves)}
 	m.Leaves = append(m.Leaves, newLeaf)
 
-	// to check
 	if len(m.Leaves)%2 == 1 {
 		m.Root = buildTree(m.Leaves, m.hashFunc)
 	} else {
@@ -143,6 +112,48 @@ func (m *MerkleTree) InsertLeaf(data []byte) {
 	}
 }
 
+// UpdateLeaf updates the data of an existing leaf in the Merkle tree
+func (m *MerkleTree) UpdateLeaf(oldData, newData []byte) error {
+	leaf, err := m.findLeaf(oldData)
+
+	if err != nil {
+		return err
+	}
+
+	leaf.Data = newData
+	oldHash := leaf.Hash
+	leaf.Hash = m.hashFunc(newData)
+	m.incrementalUpdate(leaf, oldHash)
+	return nil
+}
+
+// buildTree recursively builds the Merkle tree from the leaves
+func buildTree(nodes []*Node, hashFunc HashFunction) *Node {
+	if len(nodes) == 1 {
+		return nodes[0]
+	}
+
+	var parentNodes []*Node
+
+	for i := 0; i < len(nodes); i += 2 {
+		left := nodes[i]
+		right := left
+
+		if i+1 < len(nodes) {
+			right = nodes[i+1]
+		}
+
+		parentHash := hashFunc(append(left.Hash, right.Hash...))
+		parentNode := &Node{Hash: parentHash, Left: left, Right: right}
+		left.Parent = parentNode
+		right.Parent = parentNode
+		parentNodes = append(parentNodes, parentNode)
+	}
+
+	return buildTree(parentNodes, hashFunc)
+}
+
+// incrementalUpdate updates the tree from the given node up to the root
 func (m *MerkleTree) incrementalUpdate(node *Node, oldHash []byte) {
 	current := node
 	currentOldHash := oldHash
@@ -159,33 +170,28 @@ func (m *MerkleTree) incrementalUpdate(node *Node, oldHash []byte) {
 			}
 		}
 		current = current.Parent
-
 	}
 	m.Root = current
 }
 
-func (m *MerkleTree) UpdateLeaf(oldData, newData []byte) error {
+// findLeaf searches for leaf of the provided data
+func (m *MerkleTree) findLeaf(d []byte) (*Node, error) {
 	var leaf *Node
 
-	// TODO export this bit into helpers
 	for _, l := range m.Leaves {
-		if bytes.Equal(l.Data, oldData) {
+		if bytes.Equal(l.Data, d) {
 			leaf = l
 			break
 		}
 	}
 
 	if leaf == nil {
-		return fmt.Errorf("data not found in tree")
+		return nil, fmt.Errorf("data not found in tree")
 	}
-
-	leaf.Data = newData
-	oldHash := leaf.Hash
-	leaf.Hash = m.hashFunc(newData)
-	m.incrementalUpdate(leaf, oldHash)
-	return nil
+	return leaf, nil
 }
 
+// calculateDepth calculates the depth of the tree based on the number of leaves
 func calculateDepth(numLeaves int) int {
 	return int(math.Ceil(math.Log2(float64(numLeaves))))
 }
