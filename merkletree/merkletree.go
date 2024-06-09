@@ -3,6 +3,7 @@ package merkletree
 import (
 	"bytes"
 	"fmt"
+	"math"
 )
 
 type HashFunction func(data []byte) []byte
@@ -35,7 +36,8 @@ func NewMerkleTree(data [][]byte, hashFunc HashFunction) *MerkleTree {
 	}
 
 	tree := &MerkleTree{
-		Leaves: leaves,
+		Leaves:   leaves,
+		hashFunc: hashFunc,
 	}
 	tree.Root = buildTree(leaves, hashFunc)
 	return tree
@@ -122,4 +124,68 @@ func VerifyMerkleProof(rootHash []byte, data []byte, proof []ProofNode, hashFunc
 		}
 	}
 	return bytes.Equal(currentHash, rootHash)
+}
+
+func (m *MerkleTree) InsertLeaf(data []byte) {
+	newLeaf := &Node{Data: data, Hash: m.hashFunc(data), Index: len(m.Leaves)}
+	m.Leaves = append(m.Leaves, newLeaf)
+
+	// to check
+	if len(m.Leaves)%2 == 1 {
+		m.Root = buildTree(m.Leaves, m.hashFunc)
+	} else {
+		parent := m.Leaves[len(m.Leaves)-2].Parent
+		parent.Right = newLeaf
+		oldHash := parent.Hash
+		parent.Hash = m.hashFunc(append(parent.Left.Hash, parent.Right.Hash...))
+		newLeaf.Parent = parent
+		m.incrementalUpdate(parent, oldHash)
+	}
+}
+
+func (m *MerkleTree) incrementalUpdate(node *Node, oldHash []byte) {
+	current := node
+	currentOldHash := oldHash
+	for current.Parent != nil {
+		sibling, left := current.getSibling()
+		if bytes.Equal(sibling.Hash, currentOldHash) {
+			currentOldHash = current.Parent.Hash
+			current.Parent.Hash = m.hashFunc(append(current.Hash, current.Hash...))
+		} else {
+			if !left {
+				current.Parent.Hash = m.hashFunc(append(current.Hash, sibling.Hash...))
+			} else {
+				current.Parent.Hash = m.hashFunc(append(sibling.Hash, current.Hash...))
+			}
+		}
+		current = current.Parent
+
+	}
+	m.Root = current
+}
+
+func (m *MerkleTree) UpdateLeaf(oldData, newData []byte) error {
+	var leaf *Node
+
+	// TODO export this bit into helpers
+	for _, l := range m.Leaves {
+		if bytes.Equal(l.Data, oldData) {
+			leaf = l
+			break
+		}
+	}
+
+	if leaf == nil {
+		return fmt.Errorf("data not found in tree")
+	}
+
+	leaf.Data = newData
+	oldHash := leaf.Hash
+	leaf.Hash = m.hashFunc(newData)
+	m.incrementalUpdate(leaf, oldHash)
+	return nil
+}
+
+func calculateDepth(numLeaves int) int {
+	return int(math.Ceil(math.Log2(float64(numLeaves))))
 }

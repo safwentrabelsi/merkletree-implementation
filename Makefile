@@ -13,10 +13,9 @@ test:
 	@go clean -testcache && go test ./... -cover
 
 .PHONY: run
-run: build
+run: 
 	@echo "Running the application..."
-	@CONFIG_PATH=$(CONFIG_PATH) ./$(BUILD_FOLDER)/$(BINARY_NAME)
-
+	@go run main.go
 .PHONY: clean	
 clean:
 	@echo "Cleaning up..."
