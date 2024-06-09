@@ -3,7 +3,6 @@ package merkletree
 import (
 	"bytes"
 	"fmt"
-	"math"
 )
 
 // HashFunction defines a function type for hashing data
@@ -103,6 +102,7 @@ func (m *MerkleTree) InsertLeaf(data []byte) {
 	if len(m.Leaves)%2 == 1 {
 		m.Root = buildTree(m.Leaves, m.hashFunc)
 	} else {
+		// incremental update in this since it's easier than building the whole tree
 		parent := m.Leaves[len(m.Leaves)-2].Parent
 		parent.Right = newLeaf
 		oldHash := parent.Hash
@@ -189,9 +189,4 @@ func (m *MerkleTree) findLeaf(d []byte) (*Node, error) {
 		return nil, fmt.Errorf("data not found in tree")
 	}
 	return leaf, nil
-}
-
-// calculateDepth calculates the depth of the tree based on the number of leaves
-func calculateDepth(numLeaves int) int {
-	return int(math.Ceil(math.Log2(float64(numLeaves))))
 }

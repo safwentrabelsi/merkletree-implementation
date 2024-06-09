@@ -1,6 +1,5 @@
 BUILD_FOLDER  ?= build
 BINARY_NAME   ?= merkletree-implementation
-CONFIG_PATH   ?= config.yaml
 
 .PHONY: build
 build:
@@ -13,9 +12,9 @@ test:
 	@go clean -testcache && go test ./... -cover
 
 .PHONY: run
-run: 
+run: build
 	@echo "Running the application..."
-	@go run main.go
+	@./$(BUILD_FOLDER)/$(BINARY_NAME)
 .PHONY: clean	
 clean:
 	@echo "Cleaning up..."
